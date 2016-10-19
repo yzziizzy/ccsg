@@ -31,3 +31,28 @@
 # Debug files
 *.dSYM/
 *.su
+
+/autom4te.cache
+/aclocal.m4
+/m4
+/compile
+/configure
+/depcomp
+/install-sh
+/missing
+/stamp-h1
+/configure.scan
+Makefile.in
+Makefile
+
+.deps
+
+/config.*
+/settings.ini
+/src/ccsg-cli
+
+
+# ignore the external libs for now, i'll figure something out later for it
+/src/c3dlas
+
+
