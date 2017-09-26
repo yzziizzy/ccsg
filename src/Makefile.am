@@ -5,6 +5,7 @@ bin_PROGRAMS = ccsg-cli
 ccsg_cli_SOURCES = \
 	ccsg_cli.c \
 	ccsg.c \
+	ds.c \
 	c3dlas/c3dlas.c 
 
 
