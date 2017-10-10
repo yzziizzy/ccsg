@@ -2,11 +2,16 @@
 #include <stdint.h>
 
 #include "ds.h"
-#include "../../c3dlas/c3dlas.h"
+#include "c3dlas/c3dlas.h"
 
 
-
-
+#define CHECK_OOM(p) \
+do { \
+	if(p == NULL) { \
+		fprintf(stderr, "OOM: %s:%d\n", __FILE__, __LINE__); \
+		exit(1); \
+	}\
+} while(0)
 
 
 typedef struct PolyVertex {
@@ -47,8 +52,18 @@ typedef struct Solid {
 	
 } Solid_t;
 
+
+//////////
+
+typedef struct {
+	Vector pos;
+} MeshVertex_t;
+
+typedef VEC(MeshVertex_t) MeshVertexList_t;
+
+
 Solid_t* solidUnion(Solid_t* sa, Solid_t* sb);
-Solid_t* solidMakeCube(float lx, float ly, float lz);
+Solid_t* solidMakeCube();
 Solid_t* solidFromPolygons(PolygonList_t* polys) ;
 void solidCopy(Solid_t* copy, Solid_t* orig);
 Polygon_t* polygonCreate(PolyVertex_t* verts, int vertcnt);
@@ -77,8 +92,18 @@ struct BSPNode* bspNodeInit(PolygonList_t* polys);
 struct BSPNode* bspNodeCopy(struct BSPNode* old);
 void bspNodeInvert(struct BSPNode* n);
 
+void polyListCopy(PolygonList_t* orig, PolygonList_t* out);
 void polyListConcat(PolygonList_t* head, PolygonList_t* tail);
 void bspNodeBuild(BSPNode_t* node, PolygonList_t* polys);
 void bspNodeAllPolygons(struct BSPNode* n, PolygonList_t* out);
-void bspNodeClipPolygons(struct BSPNode* n, PolygonList_t* polys);
+void bspNodeClipPolygons(struct BSPNode* n, PolygonList_t* polys, PolygonList_t* out);
 void bspNodeClipTo(struct BSPNode* n, struct BSPNode* clipper);
+
+
+//////////
+
+
+void SolidToMesh(Solid_t* s);
+
+
+

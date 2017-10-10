@@ -87,6 +87,38 @@ do { \
 
 
 
+#define VEC_COPY(copy, orig) \
+do { \
+	void* tmp; \
+	tmp = realloc(VEC_DATA(copy), VEC_ALLOC(orig) * sizeof(*VEC_DATA(orig)) ); \
+	if(!tmp) { \
+		fprintf(stderr, "Out of memory in vector copy"); \
+		exit(1); \
+	} \
+	\
+	VEC_DATA(copy) = tmp; \
+	VEC_LEN(copy) = VEC_LEN(orig); \
+	VEC_ALLOC(copy) = VEC_ALLOC(orig); \
+	\
+	memcpy(VEC_DATA(copy), VEC_DATA(orig),  VEC_LEN(orig) * sizeof(*VEC_DATA(orig))); \
+} while(0)
+
+
+#define VEC_REVERSE(x) \
+do { \
+	size_t vec___i, vec___j; \
+	void* tmp = alloca(sizeof(*VEC_DATA(x))); \
+	for(vec___i = 0, vec___j = VEC_LEN(x); vec___i < vec___j; vec___i++, vec___j--) { \
+		memcpy(tmp, &VEC_DATA(x)[vec___i], sizeof(*VEC_DATA(x))); \
+		memcpy(&VEC_DATA(x)[vec___i], &VEC_DATA(x)[vec___j], sizeof(*VEC_DATA(x))); \
+		memcpy(&VEC_DATA(x)[vec___j], tmp, sizeof(*VEC_DATA(x))); \
+	} \
+} while(0)
+
+
+
+
+
 
 void inline vec_resize(void** data, size_t* size, size_t elem_size);
 ptrdiff_t inline vec_find(void* data, size_t len, size_t stride, void* search);

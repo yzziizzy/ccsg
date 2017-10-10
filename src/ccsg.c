@@ -69,29 +69,79 @@ Solid_t* solidFromPolygons(PolygonList_t* polys) {
 	solidInit(s);
 	
 	if(polys) {
-		polyListCopy(s->polygons, polys);
+		polyListCopy(&s->polygons, polys);
 	}
 	
 	return s;
 }
 
-Solid_t* solidMakeCube(float lx, float ly, float lz) {
+Solid_t* solidMakeCube() {
 	Solid_t* s;
 	PolyVertex_t* verts;
 	
 	s = calloc(1, sizeof(*s));
 	CHECK_OOM(s);
 	
+	// y+ face
 	verts = (PolyVertex_t[]){
-		{.pos = {1,1,1}},
-		{.pos = {2,4,1}},
-		{.pos = {2,7,1}},
-		{.pos = {2,7,8}}
+		{.pos = {-0.5, 0.5, -0.5}},
+		{.pos = {0.5, 0.5, -0.5}},
+		{.pos = {0.5, 0.5, 0.5}},
+		{.pos = {-0.5, 0.5, 0.5}}
 	};
-	
 	VEC_PUSH(&s->polygons, polygonCreate(verts, 4));
-	// TODO
+	
+	// y- face
+	verts = (PolyVertex_t[]){
+		{.pos = {-0.5, -0.5, -0.5}},
+		{.pos = {0.5, -0.5, -0.5}},
+		{.pos = {0.5, -0.5, 0.5}},
+		{.pos = {-0.5, -0.5, 0.5}}
+	};
+	VEC_PUSH(&s->polygons, polygonCreate(verts, 4));
+	
+	// x+ face
+	verts = (PolyVertex_t[]){
+		{.pos = {0.5, -0.5, -0.5}},
+		{.pos = {0.5, 0.5, -0.5}},
+		{.pos = {0.5, 0.5, 0.5}},
+		{.pos = {0.5, -0.5, 0.5}}
+	};
+	VEC_PUSH(&s->polygons, polygonCreate(verts, 4));
+	
+	// x- face
+	verts = (PolyVertex_t[]){
+		{.pos = {-0.5, -0.5, -0.5}},
+		{.pos = {-0.5, 0.5, -0.5}},
+		{.pos = {-0.5, 0.5, 0.5}},
+		{.pos = {-0.5, -0.5, 0.5}}
+	};
+	VEC_PUSH(&s->polygons, polygonCreate(verts, 4));
+	
+	// z+ face
+	verts = (PolyVertex_t[]){
+		{.pos = {-0.5, -0.5, 0.5}},
+		{.pos = {0.5, -0.5, 0.5}},
+		{.pos = {0.5, 0.5, 0.5}},
+		{.pos = {-0.5, 0.5, 0.5}}
+	};
+	VEC_PUSH(&s->polygons, polygonCreate(verts, 4));
+	
+	// z- face
+	verts = (PolyVertex_t[]){
+		{.pos = {-0.5, -0.5, -0.5}},
+		{.pos = {0.5, -0.5, -0.5}},
+		{.pos = {0.5, 0.5, -0.5}},
+		{.pos = {-0.5, 0.5, -0.5}}
+	};
+	VEC_PUSH(&s->polygons, polygonCreate(verts, 4));
+	
+	
+	return s;
 }
+
+
+
 
 Solid_t* solidMakeCylinder(float radius, float length) {
 	// TODO
@@ -402,29 +452,44 @@ void bspNodeInvert(struct BSPNode* n) {
 	n->back = temp;
 }
 
+
+// deep copy
+void polyListCopy(PolygonList_t* orig, PolygonList_t* out) {
+	int i;
+	
+	if(VEC_ALLOC(out) == 0) VEC_INIT(out);
+	
+	for(i = 0; i < VEC_LEN(orig); i++) {
+		VEC_INC(out);
+		VEC_ITEM(out, i) = polygonCopy(VEC_ITEM(orig, i));
+	}
+}
+
 // done
 // deep concat
 void polyListConcat(PolygonList_t* head, PolygonList_t* tail) {
 	int i;
 	
-	// TODO: fix below
-	if(!tail) return head;
-	if(!head) return tail;
+	// TODO: fix below properly
+	if(!tail) return;
+	if(!head) {
+		fprintf(stderr, "Warning: attempting to concat to a poly list null pointer\n");
+		return;
+	}
 	
 	for(i = 0; i < VEC_LEN(tail); i++) {
 		VEC_INC(head);
-		VEC_COPY(VEC_TAIL(head), &VEC_DATA(tail)[i]);
+		VEC_TAIL(head) = polygonCopy(VEC_ITEM(tail, i));
 	}
 }
 
 
-void bspNodeClipPolygons(struct BSPNode* n, PolygonList_t* polys) {
+void bspNodeClipPolygons(struct BSPNode* n, PolygonList_t* polys, PolygonList_t* out) {
 	
 	int i;
 	PolygonList_t front, back;
-	PolygonList_t* fo, *bo;
+	//PolygonList_t* out;
 	
-	fo = bo = NULL;
 	
 	//if (!this.plane) return polygons.slice();
 	
@@ -436,21 +501,17 @@ void bspNodeClipPolygons(struct BSPNode* n, PolygonList_t* polys) {
 	}
 	
 	
+	//out = malloc(sizeof(*out));
+	//VEC_INIT(out);
 	
-	// TODO ... um? return value?
-	if(VEC_LEN(&front)) fo = bspNodeClipPolygons(n->front, &front) 
-	if(VEC_LEN(&back)) bo = bspNodeClipPolygons(n->back, &back)
-	
+	if(VEC_LEN(&front)) bspNodeClipPolygons(n->front, &front, out);
+	if(VEC_LEN(&back)) bspNodeClipPolygons(n->back, &back, out);
 	
 	
 	VEC_FREE(&front);
 	VEC_FREE(&back);
-	
-	polyListConcat(fo, bo);
-	
-	VEC_FREE(bo);
-	
-	return fo;
+
+	//return out;
 	
 	/*
     
@@ -520,6 +581,55 @@ void bspNodeBuild(BSPNode_t* node, PolygonList_t* polys) {
 	VEC_FREE(&front);
 	VEC_FREE(&back);
 }
+
+
+
+
+
+
+/////////////////////////////////////////////////////////
+
+
+void triangulate(Polygon_t* poly, MeshVertexList_t* mvl) {
+	int i;
+	
+	for(i = 2; i < VEC_LEN(&poly->vertices); i++) {
+		VEC_INC(mvl);
+		VEC_TAIL(mvl).pos = VEC_ITEM(&poly->vertices, 0).pos;
+		
+		
+// 		VEC_PUSH(mvl, VEC_ITEM(&poly->vertices, i - 1));
+// 		VEC_PUSH(mvl, VEC_ITEM(&poly->vertices, i));
+	}
+}
+
+
+
+void SolidToMesh(Solid_t* s) {
+	int i;
+	MeshVertexList_t* mvl;
+	
+	mvl = calloc(1, sizeof(*mvl));
+	VEC_INIT(mvl);
+	
+	for(i = 0; i < VEC_LEN(&s->polygons); i++) {
+		triangulate(VEC_ITEM(&s->polygons, i), mvl);
+	}
+	
+	
+	FILE* f;
+	
+	f = fopen("./mesh.bmsh", "w");
+	
+	uint32_t len = VEC_LEN(mvl);
+	fwrite(&len, sizeof(len), 1, f);
+	fwrite(VEC_DATA(mvl), sizeof(MeshVertex_t), len, f);
+	
+	fclose(f);
+	
+	
+}
+
 
 
 
